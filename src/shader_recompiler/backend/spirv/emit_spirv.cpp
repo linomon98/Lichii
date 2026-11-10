@@ -480,7 +480,8 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.uses_sparse_residency) {
         ctx.AddCapability(spv::Capability::SparseResidency);
     }
-    if (info.uses_demote_to_helper_invocation && profile.support_demote_to_helper_invocation) {
+    if ((info.uses_demote_to_helper_invocation || ctx.runtime_info.nan_guard_discard) &&
+        profile.support_demote_to_helper_invocation) {
         if (profile.supported_spirv < 0x00010600) {
             ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
         }

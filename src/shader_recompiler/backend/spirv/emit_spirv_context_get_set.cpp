@@ -492,7 +492,24 @@ void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value) {
     const AttributeType type{ctx.runtime_info.color_output_types[index]};
     if (ctx.runtime_info.nan_guard_frag_colors && type != AttributeType::UnsignedInt &&
         type != AttributeType::SignedInt) {
-        value = ctx.OpSelect(ctx.F32[1], ctx.OpIsNan(ctx.U1, value), ctx.f32_zero_value, value);
+        const Id is_nan{ctx.OpIsNan(ctx.U1, value)};
+        if (ctx.runtime_info.nan_guard_discard) {
+            // EDEN_NX2_NAN_GUARD_DISCARD: drop the whole fragment instead of writing 0, so a
+            // triangle made of bad vertex data leaves the scene behind it instead of a dark hole.
+            const Id discard_label{ctx.OpLabel()};
+            const Id merge_label{ctx.OpLabel()};
+            ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
+            ctx.OpBranchConditional(is_nan, discard_label, merge_label);
+            ctx.AddLabel(discard_label);
+            if (ctx.profile.support_demote_to_helper_invocation) {
+                ctx.OpDemoteToHelperInvocationEXT();
+                ctx.OpBranch(merge_label);
+            } else {
+                ctx.OpKill();
+            }
+            ctx.AddLabel(merge_label);
+        }
+        value = ctx.OpSelect(ctx.F32[1], is_nan, ctx.f32_zero_value, value);
     }
     if (type == AttributeType::Float) {
         const Id pointer{ctx.OpAccessChain(ctx.output_f32, ctx.frag_color.at(index), component_id)};

@@ -2555,6 +2555,15 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         if (program.stage == Shader::Stage::Fragment &&
             NanGuardShader(key.unique_hashes[index])) {
             runtime_info.nan_guard_frag_colors = true;
+            static const bool nan_guard_discard = [] {
+                const char* const value = std::getenv("EDEN_NX2_NAN_GUARD_DISCARD");
+                const bool on = value != nullptr && value[0] == '1';
+                if (on) {
+                    LOG_INFO(Render_Vulkan, "Nx2Perf: NaN guard discards the fragment");
+                }
+                return on;
+            }();
+            runtime_info.nan_guard_discard = nan_guard_discard;
         }
         // EDEN_NX2_MESH_EMULATION_DUMP=<dir>: write the emulation's vertex shader for spirv-val.
         // (Emitting the mesh program a second time here to dump its compute shader crashed the

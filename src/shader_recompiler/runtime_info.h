@@ -100,6 +100,9 @@ struct RuntimeInfo {
     bool force_early_z{};
     /// Fragment stage: float color outputs replace NaN with 0 (EDEN_NX2_NAN_GUARD).
     bool nan_guard_frag_colors{};
+    /// With nan_guard_frag_colors: a NaN color output discards the fragment
+    /// (EDEN_NX2_NAN_GUARD_DISCARD=1).
+    bool nan_guard_discard{};
 
     TessPrimitive tess_primitive{};
     TessSpacing tess_spacing{};
